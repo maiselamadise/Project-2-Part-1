@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -28,6 +30,10 @@ app.get('/', (req, res) => {
     },
   });
 });
+
+// Swagger docs - interactive UI at /api-docs, raw spec at /swagger.json
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get('/swagger.json', (req, res) => res.status(200).json(swaggerDocument));
 
 // API Routes
 app.use('/api/books', bookRoutes);

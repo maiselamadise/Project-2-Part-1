@@ -3,7 +3,9 @@
 A REST API for managing a library's **books** and **authors**, built with Node.js, Express, and MongoDB (Mongoose).
 
 - **Live API base URL:** `https://YOUR-RENDER-APP.onrender.com` *(replace after deploying to Render)*
-- **GitHub repo:** *(add your repo link here)*
+- **Swagger UI (interactive docs/testing):** `https://YOUR-RENDER-APP.onrender.com/api-docs`
+- **Raw OpenAPI spec:** `https://YOUR-RENDER-APP.onrender.com/swagger.json`
+- **GitHub repo:** https://github.com/maiselamadise/Project-2-Part-1
 
 ## Tech Stack
 - Node.js / Express
@@ -181,7 +183,9 @@ Both models automatically include `createdAt` and `updatedAt` timestamps.
 
 ## Testing the API
 
-All routes were tested with Postman / Thunder Client:
+The easiest way to test every route is the built-in Swagger UI at `/api-docs` (locally: `http://localhost:3000/api-docs`). It lists all endpoints for both collections with example request bodies and lets you send live requests straight from the browser.
+
+All routes were also tested with Postman / Thunder Client:
 1. Create an author (`POST /api/authors`), copy the returned `_id`.
 2. Create a book (`POST /api/books`) using that author `_id`.
 3. Fetch all books (`GET /api/books`) and confirm the author is populated.

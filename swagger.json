@@ -1,0 +1,285 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Library API",
+    "description": "A REST API for managing a library's books and authors, built with Node.js, Express, and MongoDB (Mongoose).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://YOUR-RENDER-APP.onrender.com",
+      "description": "Production (Render)"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    { "name": "Authors", "description": "Operations on the /api/authors collection" },
+    { "name": "Books", "description": "Operations on the /api/books collection" }
+  ],
+  "paths": {
+    "/api/authors": {
+      "get": {
+        "tags": ["Authors"],
+        "summary": "Get all authors",
+        "responses": {
+          "200": {
+            "description": "List of authors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "count": { "type": "integer", "example": 2 },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Author" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Authors"],
+        "summary": "Create a new author",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthorInput" },
+              "example": {
+                "name": "George Orwell",
+                "bio": "English novelist and essayist.",
+                "birthYear": 1903,
+                "nationality": "British",
+                "website": "https://www.orwellfoundation.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Author created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Author" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/authors/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Author MongoDB ObjectId" }
+      ],
+      "get": {
+        "tags": ["Authors"],
+        "summary": "Get a single author",
+        "responses": {
+          "200": { "description": "Author found", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Author" } } } } } },
+          "400": { "description": "Invalid ID format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Author not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Authors"],
+        "summary": "Update an existing author",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthorInput" },
+              "example": { "birthYear": 1904 }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Author updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Author" } } } } } },
+          "400": { "description": "Validation error or invalid ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Author not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Authors"],
+        "summary": "Delete an author",
+        "responses": {
+          "200": { "description": "Author deleted", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "$ref": "#/components/schemas/Author" } } } } } },
+          "400": { "description": "Invalid ID format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Author not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/books": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get all books (author info populated)",
+        "responses": {
+          "200": {
+            "description": "List of books",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "count": { "type": "integer", "example": 1 },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Book" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Books"],
+        "summary": "Create a new book",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BookInput" },
+              "example": {
+                "title": "1984",
+                "author": "66f0c2a1e4b0a1a2b3c4d5e6",
+                "isbn": "978-0-452-28423-4",
+                "genre": "Dystopian Fiction",
+                "publishedYear": 1949,
+                "pages": 328,
+                "rating": 4.8,
+                "description": "A dystopian social science fiction novel.",
+                "inStock": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Book created", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Book" } } } } } },
+          "400": { "description": "Validation error, or referenced author does not exist", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/books/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Book MongoDB ObjectId" }
+      ],
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get a single book",
+        "responses": {
+          "200": { "description": "Book found", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Book" } } } } } },
+          "400": { "description": "Invalid ID format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Book not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Books"],
+        "summary": "Update an existing book (partial updates allowed)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BookInput" },
+              "example": { "rating": 4.9, "inStock": false }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Book updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Book" } } } } } },
+          "400": { "description": "Validation error, invalid ID, or referenced author does not exist", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Book not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Books"],
+        "summary": "Delete a book",
+        "responses": {
+          "200": { "description": "Book deleted", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "$ref": "#/components/schemas/Book" } } } } } },
+          "400": { "description": "Invalid ID format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Book not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Author": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "66f0c2a1e4b0a1a2b3c4d5e6" },
+          "name": { "type": "string", "example": "George Orwell" },
+          "bio": { "type": "string", "example": "English novelist and essayist." },
+          "birthYear": { "type": "integer", "example": 1903 },
+          "nationality": { "type": "string", "example": "British" },
+          "website": { "type": "string", "example": "https://www.orwellfoundation.com" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AuthorInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "description": "Author's full name (required)" },
+          "bio": { "type": "string", "description": "Short biography" },
+          "birthYear": { "type": "integer", "description": "1000 - current year" },
+          "nationality": { "type": "string" },
+          "website": { "type": "string", "description": "Must be a valid URL if provided" }
+        }
+      },
+      "Book": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "66f0c3b2e4b0a1a2b3c4d5e7" },
+          "title": { "type": "string", "example": "1984" },
+          "author": { "$ref": "#/components/schemas/Author" },
+          "isbn": { "type": "string", "example": "978-0-452-28423-4" },
+          "genre": { "type": "string", "example": "Dystopian Fiction" },
+          "publishedYear": { "type": "integer", "example": 1949 },
+          "pages": { "type": "integer", "example": 328 },
+          "rating": { "type": "number", "example": 4.8 },
+          "description": { "type": "string" },
+          "inStock": { "type": "boolean", "example": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BookInput": {
+        "type": "object",
+        "required": ["title", "author", "isbn", "genre", "publishedYear", "pages"],
+        "properties": {
+          "title": { "type": "string" },
+          "author": { "type": "string", "description": "Must reference an existing Author's _id" },
+          "isbn": { "type": "string", "description": "Must be unique" },
+          "genre": { "type": "string" },
+          "publishedYear": { "type": "integer", "description": "1000 - current year" },
+          "pages": { "type": "integer", "description": "Must be >= 1" },
+          "rating": { "type": "number", "description": "0 - 5, defaults to 0" },
+          "description": { "type": "string" },
+          "inStock": { "type": "boolean", "description": "Defaults to true" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Descriptive error message" }
+        }
+      }
+    }
+  }
+}
