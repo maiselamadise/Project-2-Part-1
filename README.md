@@ -2,15 +2,19 @@
 
 A REST API for managing a library's **books** and **authors**, built with Node.js, Express, and MongoDB (Mongoose).
 
-- **Live API base URL:** `https://YOUR-RENDER-APP.onrender.com` *(replace after deploying to Render)*
-- **Swagger UI (interactive docs/testing):** `https://YOUR-RENDER-APP.onrender.com/api-docs`
-- **Raw OpenAPI spec:** `https://YOUR-RENDER-APP.onrender.com/swagger.json`
+- **Live API base URL:** `https://YOUR-RENDER-APP.onrender.com` *(TODO: replace with the real Render URL before submitting)*
+- **Swagger UI (interactive docs/testing):** `<live URL>/api-docs`
+- **Health check:** `<live URL>/health`
+- **Raw OpenAPI spec:** `<live URL>/swagger.json`
 - **GitHub repo:** https://github.com/maiselamadise/Project-2-Part-1
+
+> The free Render tier sleeps when idle, so the **first request can take 30-60 seconds**. Wait for it, then everything responds normally.
 
 ## Tech Stack
 - Node.js / Express
 - MongoDB Atlas + Mongoose
 - express-validator (validation)
+- Swagger UI (swagger-ui-express) for interactive docs
 - CORS enabled
 
 ## Data Model
@@ -49,15 +53,25 @@ Both models automatically include `createdAt` and `updatedAt` timestamps.
    ```bash
    cp .env.example .env
    ```
-3. Run the server:
+3. Run the server (requires Node 18+):
    ```bash
-   npm run dev
+   npm start        # or: npm run dev  (auto-restarts on changes)
    ```
-   The API will be available at `http://localhost:3000`.
+   The API will be available at `http://localhost:3000`, with Swagger UI at `http://localhost:3000/api-docs`.
+   If `MONGO_URI` is missing or wrong, the server prints a clear error and exits instead of hanging.
 
 **Note:** `.env` is included in `.gitignore` and must never be committed. When deploying, add `MONGO_URI` and `PORT` as environment variables in the Render dashboard instead.
 
 ## Endpoints
+
+### Service
+
+| Method | Endpoint      | Description                                              |
+|--------|---------------|-----------------------------------------------------------|
+| GET    | `/`           | API info and links                                        |
+| GET    | `/health`     | `200` when the DB is connected, `503` otherwise           |
+| GET    | `/api-docs`   | Swagger UI                                                |
+| GET    | `/swagger.json` | Raw OpenAPI 3 spec                                      |
 
 ### Authors
 
@@ -179,21 +193,60 @@ Both models automatically include `createdAt` and `updatedAt` timestamps.
 | Invalid ObjectId in URL             | 400    | "Invalid ID format"                                   |
 | Duplicate ISBN                      | 400    | "Duplicate value for field \"isbn\": ... already exists" |
 | Book/Author not found               | 404    | "Book not found" / "Author not found"                 |
+| Malformed JSON body                 | 400    | "Invalid JSON in request body"                        |
 | Unknown route                       | 404    | "Route not found - /api/xyz"                          |
 
 ## Testing the API
 
-The easiest way to test every route is the built-in Swagger UI at `/api-docs` (locally: `http://localhost:3000/api-docs`). It lists all endpoints for both collections with example request bodies and lets you send live requests straight from the browser.
+There are three ways to test every route. All work identically against `http://localhost:3000` and the deployed Render URL.
 
-All routes were also tested with Postman / Thunder Client:
-1. Create an author (`POST /api/authors`), copy the returned `_id`.
-2. Create a book (`POST /api/books`) using that author `_id`.
-3. Fetch all books (`GET /api/books`) and confirm the author is populated.
-4. Update the book (`PUT /api/books/:id`).
-5. Delete the book (`DELETE /api/books/:id`) and confirm it's gone via `GET /api/books`.
+### 1. Swagger UI (no tools needed)
 
-## Deployment
+Open `/api-docs`, expand an endpoint, click **Try it out**, then **Execute**. Requests are sent to whichever host is serving the page, so the same docs work locally and on Render. Suggested order:
 
-- Hosted on **Render** as a Web Service.
-- Environment variables (`MONGO_URI`) are configured in the Render dashboard, not committed to source control.
-- MongoDB database is hosted on MongoDB Atlas.
+1. `POST /api/authors` - create an author and copy the `_id` from the response.
+2. `POST /api/books` - paste that `_id` into the `author` field (a book needs an existing author) and use a unique `isbn`.
+3. `GET /api/books` - confirm the author is populated.
+4. `PUT /api/books/{id}` - update it (any subset of fields).
+5. `DELETE /api/books/{id}` - remove it, then `GET /api/books/{id}` returns 404.
+
+### 2. Automated smoke test (one command)
+
+Runs the whole flow - create, read, update, delete, plus validation/404/duplicate/malformed-JSON cases - and cleans up after itself. No extra dependencies.
+
+```bash
+npm run smoke                                    # tests http://localhost:3000
+npm run smoke -- https://YOUR-RENDER-APP.onrender.com   # tests the deployed API
+```
+
+It prints PASS/FAIL per check and exits non-zero if anything fails.
+
+### 3. curl
+
+```bash
+BASE=http://localhost:3000   # or your Render URL
+
+# create an author and note the _id in the response
+curl -s -X POST $BASE/api/authors -H "Content-Type: application/json" \
+  -d '{"name":"George Orwell","birthYear":1903,"nationality":"British"}'
+
+# create a book using that _id
+curl -s -X POST $BASE/api/books -H "Content-Type: application/json" \
+  -d '{"title":"1984","author":"<AUTHOR_ID>","isbn":"978-0-452-28423-4","genre":"Dystopian Fiction","publishedYear":1949,"pages":328}'
+
+curl -s $BASE/api/books
+curl -s -X PUT $BASE/api/books/<BOOK_ID> -H "Content-Type: application/json" -d '{"rating":4.9}'
+curl -s -X DELETE $BASE/api/books/<BOOK_ID>
+```
+
+## Deployment (Render + MongoDB Atlas)
+
+1. **MongoDB Atlas:** create a cluster and a database user. Under **Network Access**, allow connections from Render (add `0.0.0.0/0`; Render's outbound IPs are not fixed). Copy the connection string and include a database name, e.g. `.../library?retryWrites=true&w=majority`.
+2. **Render:** create a **Web Service** from the GitHub repo with
+   - Build command: `npm install`
+   - Start command: `npm start`
+   - Environment variable: `MONGO_URI` = your Atlas connection string (`PORT` is set by Render automatically)
+3. Once deployed, visit `<render-url>/health` - it should return `{"success":true,"status":"ok","database":"connected"}`. Then open `<render-url>/api-docs` or run `npm run smoke -- <render-url>`.
+4. Put the real URL at the top of this README.
+
+`.env` and `node_modules/` are git-ignored; secrets live only in the Render dashboard.

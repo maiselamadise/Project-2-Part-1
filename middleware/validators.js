@@ -66,7 +66,7 @@ const authorCreateRules = [
     .isInt({ min: 1000, max: new Date().getFullYear() })
     .withMessage('Birth year must be a valid year'),
   body('nationality').optional().trim(),
-  body('website').optional().trim().isURL().withMessage('Website must be a valid URL'),
+  body('website').optional({ values: 'falsy' }).trim().isURL().withMessage('Website must be a valid URL'),
 ];
 
 const authorUpdateRules = [
@@ -77,7 +77,7 @@ const authorUpdateRules = [
     .isInt({ min: 1000, max: new Date().getFullYear() })
     .withMessage('Birth year must be a valid year'),
   body('nationality').optional().trim(),
-  body('website').optional().trim().isURL().withMessage('Website must be a valid URL'),
+  body('website').optional({ values: 'falsy' }).trim().isURL().withMessage('Website must be a valid URL'),
 ];
 
 module.exports = {

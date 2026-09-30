@@ -11,6 +11,17 @@ const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Server Error';
 
+  // Malformed JSON body (body-parser raises a SyntaxError tagged with status 400)
+  if (err.type === 'entity.parse.failed') {
+    statusCode = 400;
+    message = 'Invalid JSON in request body';
+  }
+
+  // Other client errors raised by Express/body-parser (e.g. 413 payload too large)
+  if (err.status >= 400 && err.status < 500 && err.type !== 'entity.parse.failed') {
+    statusCode = err.status;
+  }
+
   // Mongoose bad ObjectId (CastError)
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 400;
